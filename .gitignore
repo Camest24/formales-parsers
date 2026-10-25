@@ -1,0 +1,20 @@
+# Python compiled files
+__pycache__/
+*.pyc
+
+# Virtual environments
+venv/
+.venv/
+
+# Editor and system files
+.vscode/
+*.code-workspace
+.DS_Store
+Thumbs.db
+
+# LaTeX build files (keep only the .tex source and the final PDF)
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
