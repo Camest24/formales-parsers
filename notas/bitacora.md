@@ -15,6 +15,14 @@ Notas internas (en español) para el informe: lo que desarrollamos y los problem
 - **Formato de `--sets`** (`formatear_conjunto` e `imprimir_sets`): no terminales en orden alfabético; dentro de las llaves, terminales en orden ASCII, luego `e` y luego `$`.
 - **Pruebas** (`test_grammar.py`): 13 pruebas con los 3 ejemplos del enunciado y casos especiales.
 - **Ejemplos** (`ejemplos/`): las entradas de los 3 ejemplos del enunciado, para probar con `<`.
+- **Programa de consola** (`main.py`): lee la gramática desde la entrada estándar y, con la opción `--sets`, imprime los conjuntos. Probado con los 3 ejemplos: `python main.py --sets < ejemplos/ejemplo1.txt`. Queda un `TODO` donde se conectan los parsers del ítem 2.
+- **README**: estructura del proyecto, cómo correr el ítem 1 y las pruebas, y explicación de FIRST/FOLLOW citando Aho 4.4.2.
+
+**Cómo lo trabajamos:** primero calculamos FIRST y FOLLOW del Ejemplo 1 **a mano** (escribiendo palabras y mirando con qué empiezan, y buscando el vecino a la derecha de cada no terminal) y después lo pasamos a código. Los resultados a mano coinciden con los del programa.
+
+**Commits del día:** `Initial project structure` → `Read grammar` → `Compute FIRST sets` → `Compute FOLLOW sets` (incluye `--sets`) → pruebas, ejemplos, notas y README → `main.py`.
+
+**Estado:** ítem 1 terminado (el plan lo tenía para el 30 oct).
 
 ### Estructuras de datos usadas (lo pide el informe)
 - Gramática: diccionario `{"A": [["a", "A"], ["d"]], ...}`.
@@ -42,6 +50,21 @@ Notas internas (en español) para el informe: lo que desarrollamos y los problem
 
 6. **Orden de salida de `--sets`.** Los `set` de Python no tienen orden.
    → `sorted()` (orden ASCII) para los terminales, y `e` y `$` se agregan al final a mano.
+
+7. **Cuánto leer de la entrada.** Después de la gramática vienen la letra del parser y las cadenas; si el programa leyera toda la entrada de una vez, las mezclaría con las producciones, y si alguien escribe a mano, se quedaría esperando cadenas antes de decir qué tipo de gramática es.
+   → `main.py` lee exactamente `1 + n` líneas (el número `n` y las `n` producciones) con `input()`. Las cadenas se leerán después, una por una.
+
+8. **Una misma función para la consola y para el web server.** `input()` solo sirve en la consola.
+   → `leer_gramatica` recibe una **lista de líneas** ya leídas: `main.py` las lee con `input()`, y el servidor las podrá sacar del texto que llegue por HTTP.
+
+9. **Correr el programa con un archivo de entrada (Windows).**
+   - "El sistema no puede encontrar la ruta especificada": la terminal estaba en `C:\Users\juanc` y no en la carpeta del proyecto → hacer `cd` a la carpeta `parsers` (o abrir `parsers` en VS Code con *Open Folder*).
+   - El `<` funciona en CMD y Git Bash, pero no en PowerShell → en PowerShell: `Get-Content ejemplos/ejemplo1.txt | python main.py --sets`.
+
+---
+
+## Siguiente paso
+- Ítem 2: tabla LL(1) (Aho 4.4.3, Algoritmo 4.31), prueba de LL(1) y parser con pila (4.4.4, Algoritmo 4.34).
 
 ---
 

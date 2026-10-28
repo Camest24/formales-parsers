@@ -10,4 +10,5 @@ Anotar aquí cada uso, para no olvidarlo al final. **Esta carpeta `notas/` NO se
 | 24 oct 2026 | Claude | Explicar FIRST y FOLLOW paso a paso con ejemplos (los conjuntos del Ejemplo 1 los calculamos nosotros a mano, guiados). |
 | 24 oct 2026 | Claude | Escribir y explicar línea por línea `grammar.py` (lectura, FIRST, FOLLOW, formato de `--sets`). |
 | 24 oct 2026 | Claude | Crear `test_grammar.py`, los archivos de `ejemplos/`, esta bitácora y el README. |
+| 24 oct 2026 | Claude | Escribir y explicar `main.py` (lectura de la consola y opción `--sets`) y resolver cómo correrlo en la terminal de Windows. |
 | 24 oct 2026 | Claude Code | Hacer los commits y crear el repo en GitHub. |
