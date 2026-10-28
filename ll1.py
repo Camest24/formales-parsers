@@ -29,6 +29,32 @@ def es_ll1(tabla):  # una gramática es LL(1) si ninguna casilla tiene dos alter
     return True  # revisó todas y ninguna tenía conflicto: SÍ es LL(1)
 
 
+def parsear_ll1(tabla, palabra):  # parser con pila (Aho 4.4.4, Algoritmo 4.34): True = yes, False = no
+    pila = ["$", "S"]  # lista "espero leer": el FINAL de la lista es la ficha de adelante
+    entrada = list(palabra) + ["$"]  # lista "me falta": la palabra con $ al final
+    i = 0  # posición de la letra que toca en la entrada
+
+    while True:  # repite pasos hasta que salga yes o no
+        X = pila[-1]  # ficha de adelante de "espero leer" ([-1] = el último de la lista)
+        a = entrada[i]  # letra que toca
+
+        if X == "$" and a == "$":  # las dos listas quedaron vacías al mismo tiempo
+            return True  # yes
+
+        if X == a:  # MOVIMIENTO 1: las dos fichas son iguales
+            pila.pop()  # la tacho de "espero leer" (pop quita el último)
+            i += 1  # y avanzo en la palabra
+
+        elif X.isupper() and (X, a) in tabla:  # MOVIMIENTO 2: es mayúscula y el directorio tiene casilla
+            alt = tabla[(X, a)][0]  # la alternativa de la casilla [X, a]
+            pila.pop()  # quito la mayúscula
+            for simbolo in reversed(alt):  # meto la alternativa al revés...
+                pila.append(simbolo)  # ...para que su primera letra quede de adelante
+
+        else:  # fichas distintas, casilla vacía o una lista se acabó antes
+            return False  # no
+
+
 if __name__ == "__main__":  # esto solo corre con: python ll1.py (es una prueba rápida)
     from grammar import leer_gramatica, calcular_first, calcular_follow  # funciones del ítem 1
 
@@ -40,3 +66,7 @@ if __name__ == "__main__":  # esto solo corre con: python ll1.py (es una prueba 
     for casilla in sorted(tabla):  # recorre las casillas en orden (primero por fila, luego por columna)
         print(casilla, tabla[casilla])  # imprime: ('A', 'a') [['a', 'A']]
     print("Es LL(1):", es_ll1(tabla))  # debe decir True
+
+    for palabra in ["d", "adbc", "a"]:  # las cadenas del ejemplo 2 del enunciado
+        print(palabra, "yes" if parsear_ll1(tabla, palabra) else "no")  # debe dar yes, yes, no
+
