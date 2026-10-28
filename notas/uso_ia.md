@@ -12,3 +12,6 @@ Anotar aquí cada uso, para no olvidarlo al final. **Esta carpeta `notas/` NO se
 | 24 oct 2026 | Claude | Crear `test_grammar.py`, los archivos de `ejemplos/`, esta bitácora y el README. |
 | 24 oct 2026 | Claude | Escribir y explicar `main.py` (lectura de la consola y opción `--sets`) y resolver cómo correrlo en la terminal de Windows. |
 | 24 oct 2026 | Claude Code | Hacer los commits y crear el repo en GitHub. |
+| 26 oct 2026 | Claude | Explicar la tabla LL(1) con ejemplos; armamos a mano dos tablas guiados. |
+| 27 oct 2026 | Claude | Escribir y explicar `ll1.py` (tabla LL(1), prueba de LL(1) y parser con pila) y hacer diagramas interactivos para practicar el parser paso a paso. |
+| 27 oct 2026 | Claude | Proponer el reparto del trabajo y actualizar la bitácora. |

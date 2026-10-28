@@ -24,10 +24,21 @@ Notas internas (en español) para el informe: lo que desarrollamos y los problem
 
 **Estado:** ítem 1 terminado (el plan lo tenía para el 30 oct).
 
+### 27 oct 2026 — Ítem 2: mitad LL(1)
+- **Tabla LL(1)** (`construir_tabla_ll1` en `ll1.py`): Aho 4.4.3, Algoritmo 4.31. Regla 1: cada alternativa va en las casillas de su FIRST. Regla 2: si la alternativa puede ser ε, va en las casillas de FOLLOW de la cabeza.
+- **Prueba de LL(1)** (`es_ll1`): la gramática es LL(1) si ninguna casilla tiene dos alternativas. Resultados: Ejemplo 2 sí; Ejemplo 1 y Ejemplo 3 no (coincide con el enunciado).
+- **Parser con pila** (`parsear_ll1`): Aho 4.4.4, Algoritmo 4.34. Probado con las cadenas del Ejemplo 2 (`d` yes, `adbc` yes, `a` no) y con `S -> aBc d`, `B -> bB e` (`abc`, `abbc` yes; `ab`, `dc` no).
+
+**Cómo lo trabajamos:** el 26 oct armamos a mano las tablas LL(1) del Ejemplo 2 y de `S -> aBc | d`, `B -> bB | e`. El 27 oct practicamos el parser como un juego de dos listas ("lo que espero leer" contra "lo que me falta"), con dos movimientos: tachar si las fichas son iguales, o buscar en la tabla si la ficha es un no terminal. Después lo pasamos a código.
+
+**Estado:** falta conectar el parser LL(1) a `main.py` (leer las cadenas hasta la línea vacía, la cadena vacía `e`) y hacer el SLR(1).
+
 ### Estructuras de datos usadas (lo pide el informe)
 - Gramática: diccionario `{"A": [["a", "A"], ["d"]], ...}`.
 - ε: lista vacía `[]` en la gramática, y el texto `"e"` dentro de los conjuntos.
 - FIRST y FOLLOW: diccionario `no terminal -> set` de símbolos.
+- Tabla LL(1): diccionario con llave `(no terminal, terminal)` y valor la **lista** de alternativas de esa casilla. Es una lista (y no una sola alternativa) para poder detectar conflictos. Las casillas vacías no se guardan.
+- Pila del parser LL(1): lista de Python, donde el **final** de la lista es el tope (porque `append` y `pop` trabajan al final). Empieza como `["$", "S"]`.
 
 ---
 
@@ -61,10 +72,25 @@ Notas internas (en español) para el informe: lo que desarrollamos y los problem
    - "El sistema no puede encontrar la ruta especificada": la terminal estaba en `C:\Users\juanc` y no en la carpeta del proyecto → hacer `cd` a la carpeta `parsers` (o abrir `parsers` en VS Code con *Open Folder*).
    - El `<` funciona en CMD y Git Bash, pero no en PowerShell → en PowerShell: `Get-Content ejemplos/ejemplo1.txt | python main.py --sets`.
 
+10. **Cómo detectar si una gramática no es LL(1).** Si cada casilla guardara una sola alternativa, la segunda sobrescribiría a la primera y el conflicto no se vería.
+   → Cada casilla guarda una **lista** de alternativas; `es_ll1` revisa si alguna tiene más de una. En el Ejemplo 1, la recursión por la izquierda hace que `S -> S+T` y `S -> T` caigan en [S, i] y [S, (].
+
+11. **Orden en que se mete una alternativa en la pila.** Con `S -> aBc`, la `a` tiene que quedar en el tope porque es lo primero que se lee.
+   → Se mete con `reversed(alt)`: primero `c`, luego `B`, luego `a`. Una alternativa ε (`[]`) no mete nada, así que el no terminal simplemente desaparece.
+
+12. **Cuándo responder no.** Hay tres casos: las fichas de adelante son terminales distintos, la casilla de la tabla está vacía, o una lista se acaba antes que la otra (ej. `ab`: se acaba la palabra pero aún se espera `c`; `dc`: ya no se espera nada pero sobra `c`).
+   → Todos caen en el `else` final del parser; solo es yes cuando la pila y la entrada llegan a `$` al mismo tiempo.
+
 ---
 
 ## Siguiente paso
-- Ítem 2: tabla LL(1) (Aho 4.4.3, Algoritmo 4.31), prueba de LL(1) y parser con pila (4.4.4, Algoritmo 4.34).
+- Conectar el parser LL(1) a `main.py`: leer las cadenas una por una hasta la línea vacía, la cadena vacía `e`, imprimir `yes`/`no`.
+- Ítem 2, mitad SLR(1): Aho 4.5 (shift-reduce y conflictos) y 4.6 (ítems LR(0), CLOSURE, GOTO, tablas ACTION/GOTO, parser LR).
+
+## Reparto del trabajo (propuesto el 27 oct)
+- **Camilo:** ítem 2 (parsers LL(1) y SLR(1)).
+- **Mariana:** ítem 3 en papel (escoger gramática y atributos, tabla de reglas semánticas, ejemplo a mano con árbol anotado y grafo de dependencias). Leer Aho 5.1 y 5.2.
+- **Los dos:** evaluador del SDD, web server, informe y ensayo de la sustentación. Cada uno le explica al otro lo que hizo.
 
 ---
 
