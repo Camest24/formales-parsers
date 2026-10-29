@@ -15,3 +15,6 @@ Anotar aquí cada uso, para no olvidarlo al final. **Esta carpeta `notas/` NO se
 | 26 oct 2026 | Claude | Explicar la tabla LL(1) con ejemplos; armamos a mano dos tablas guiados. |
 | 27 oct 2026 | Claude | Escribir y explicar `ll1.py` (tabla LL(1), prueba de LL(1) y parser con pila) y hacer diagramas interactivos para practicar el parser paso a paso. |
 | 27 oct 2026 | Claude | Proponer el reparto del trabajo y actualizar la bitácora. |
+| 27 oct 2026 | Claude | Conectar el parser LL(1) a `main.py`, escribir `test_ll1.py` y documentar el LL(1) en el README. |
+| 28 oct 2026 | Claude | Redactar el prompt con el que Mariana arrancó el ítem 3 en otro chat. |
+| 28 oct 2026 | Claude | Explicar shift-reduce, ítems LR(0), CLOSURE y GOTO con juegos interactivos, analogías (lista de mercado) y la relación con el NFA → DFA de la entrega 1; calculamos estados a mano guiados. |
