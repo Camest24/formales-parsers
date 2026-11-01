@@ -19,14 +19,16 @@ Class number: SI2002-4368 (Formal Languages, 2026-2)
 
 | File | Contents |
 |---|---|
-| `main.py` | Console program: reads the grammar from standard input (`--sets` option) |
+| `main.py` | Console program: reads the grammar from standard input (`--sets` and `--trace` options) |
 | `grammar.py` | Grammar reading, FIRST and FOLLOW sets, `--sets` output format (Item 1) |
+| `slr.py` | LR(0) automaton, SLR(1) table and LR parser (Item 2) |
 | `ll1.py` | LL(1) parsing table, LL(1) test and table-driven predictive parser (Item 2) |
 | `test_grammar.py` | Unit tests for `grammar.py` |
 | `test_ll1.py` | Unit tests for `ll1.py` |
+| `test_slr.py` | Unit tests for `slr.py` |
 | `ejemplos/` | Inputs of the three examples of the assignment |
 
-<!-- TODO: add slr.py, sdd.py and app.py as we create them -->
+<!-- TODO: add sdd.py and app.py as we create them -->
 
 ## How to run
 
@@ -53,23 +55,50 @@ The grammar can also be typed by hand: run `python main.py --sets` and write it 
 
 ### Item 2: LL(1) and SLR(1) parsers
 
-After the grammar, the program decides whether it is LL(1) and/or SLR(1) and reads the strings to parse, one per line, until an empty line. The empty string is written as `e`. For each string it prints `yes` or `no`.
+After the grammar, the program decides whether it is LL(1) and/or SLR(1) and reads the strings to parse, one per line, until an empty line. The empty string is written as `e`. For each string it prints `yes` or `no`. The four cases of the assignment are handled as specified (menu `T` / `B` / `Q` when both parsers apply).
 
 ```
-python main.py < ejemplos/ejemplo2_ll1.txt
+python main.py < ejemplos/ejemplo1.txt      # SLR(1) only
+python main.py < ejemplos/ejemplo2.txt      # both: shows the T / B / Q menu
+python main.py < ejemplos/ejemplo3.txt      # neither
+python main.py < ejemplos/solo_ll1.txt      # LL(1) only
 ```
 
-Expected output (the grammar of Example 2 is LL(1); the strings are `d`, `adbc`, `a` and the empty string):
+Expected output for `ejemplos/ejemplo1.txt`:
 
 ```
-Grammar is LL(1).
+Grammar is SLR(1).
 yes
 yes
 no
-no
 ```
 
-<!-- TODO: SLR(1) and the T / B / Q menu (case 1). Until slr.py exists, every grammar that is not LL(1) is reported as neither. -->
+#### Step-by-step trace of the SLR(1) parser (`--trace`)
+
+With the `--trace` option, the SLR(1) parser prints one line per step (the stack of states, the input that is left, and the action) before the `yes` / `no` answer of each string. Without the option, the output is exactly the one required by the assignment.
+
+```
+python main.py --trace < ejemplos/ejemplo1.txt
+```
+
+For example, typing the grammar `S -> (S) i` and the string `((i))` (menu option `B`) prints:
+
+```
+--- trace: ((i)) ---
+Pila              Entrada     Acción
+0                 ((i))$      shift 1
+0 1               (i))$       shift 1
+0 1 1             i))$        shift 3
+0 1 1 3           ))$         reduce S -> i
+0 1 1 4           ))$         shift 5
+0 1 1 4 5         )$          reduce S -> ( S )
+0 1 4             )$          shift 5
+0 1 4 5           $           reduce S -> ( S )
+0 2               $           accept
+yes
+```
+
+The state numbers are only names given in the order in which the automaton states are discovered. The trace is also what the report uses to show a string parsed step by step.
 
 ### Item 3: SDD evaluator
 
@@ -82,7 +111,7 @@ no
 ## Tests
 
 ```
-python -m unittest test_grammar test_ll1 -v
+python -m unittest test_grammar test_ll1 test_slr -v
 ```
 
 ## Algorithms
@@ -101,6 +130,13 @@ All algorithms follow Aho et al., *Compilers: Principles, Techniques, and Tools*
 - **Parsing table** (Algorithm 4.31): for each production `A -> α`, add it to `M[A, a]` for every terminal `a` in FIRST(α); if ε is in FIRST(α), also add it to `M[A, b]` for every `b` in FOLLOW(A) (including `$`). Each cell stores a list of productions.
 - **LL(1) test**: the grammar is LL(1) if and only if no cell has more than one production. The grammar is never transformed before this test.
 - **Parser** (Algorithm 4.34): a stack (a Python list whose last element is the top) starts as `[$, S]`, and `$` is appended to the input. If the top equals the current input symbol, both are consumed; if the top is a nonterminal, it is replaced by the production in `M[top, symbol]`, pushed in reverse order. The string is accepted when both the stack and the input reach `$`; any other case is an error.
+
+### SLR(1) parser (Sections 4.6.2, 4.6.3 and 4.6.4)
+
+- **Augmented grammar**: the productions are numbered in a list and `S' -> S` is added as production 0.
+- **LR(0) items** (4.6.2): a tuple `(production number, dot position)`. `closure` adds the productions of every nonterminal that follows a dot, until nothing changes. `goto(I, X)` moves the dot over `X` in the items that expect it and then applies `closure`. The canonical collection is built by exploring states from `closure({S' -> • S})`; each state is a `frozenset` of items.
+- **SLR(1) table** (Algorithm 4.46): an arrow on a terminal gives a shift; an arrow on a nonterminal gives a GOTO entry; an item `A -> α •` gives a reduce on every terminal in FOLLOW(A); `S' -> S •` gives accept on `$`. If a cell would get two different actions, it is recorded as a conflict and the grammar is not SLR(1).
+- **Parser** (Algorithm 4.44): a stack of states; shift pushes the target state, reduce pops one state per symbol of the production and pushes the GOTO of the state that is left.
 
 ## Use of generative AI tools
 
