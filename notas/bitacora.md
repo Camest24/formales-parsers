@@ -50,6 +50,15 @@ Notas internas (en español) para el informe: lo que desarrollamos y los problem
 
 **Estado:** falta escribir `slr.py` (closure, goto, colección de estados, tabla ACTION/GOTO, parser LR) y conectarlo a `main.py`.
 
+### 1 nov 2026 — Ítem 2 completo: SLR(1) y `main.py` con los 4 casos
+- **Autómata LR(0)** (`slr.py`: `numerar_producciones`, `closure`, `goto`, `construir_cajas`): Aho 4.6.2. Con `S -> S+i | i` da las 5 cajas que calculamos a mano; con el Ejemplo 1 da 12 cajas (los estados I0 a I11 del libro).
+- **Tabla SLR(1)** (`construir_tabla_slr`, `es_slr1`): Aho 4.6.4, Algoritmo 4.46. Una flecha con terminal da shift; una flecha con no terminal da GOTO; un ítem con el punto al final da reduce en cada letra de FOLLOW(cabeza); `S' -> S •` da accept en `$`. Si una casilla recibe dos acciones distintas se registra un conflicto y la gramática no es SLR(1).
+- **Parser LR** (`parsear_slr`): Aho 4.6.3, Algoritmo 4.44. Pila de estados; el reduce saca un estado por cada símbolo de la producción y apila el GOTO.
+- **`main.py` completo:** decide LL(1) / SLR(1) / ambas / ninguna e imprime el mensaje exacto de cada caso, con el menú T / B / Q cuando son las dos. Los 3 ejemplos del enunciado dan la salida esperada.
+- **Pruebas:** `test_slr.py` (11 pruebas) y las de LL(1) y FIRST/FOLLOW; 35 pruebas en total, todas pasan.
+
+**Cómo lo aprendimos:** juegos interactivos para (1) pegar los letreros de las flechas, (2) pegar los reduce usando FOLLOW y (3) leer la tabla paso a paso con la pila de estados. Quedó una duda para repasar: el llenado de la tabla, sobre todo el reduce.
+
 ### Estructuras de datos usadas (lo pide el informe)
 - Gramática: diccionario `{"A": [["a", "A"], ["d"]], ...}`.
 - ε: lista vacía `[]` en la gramática, y el texto `"e"` dentro de los conjuntos.
@@ -106,11 +115,18 @@ Notas internas (en español) para el informe: lo que desarrollamos y los problem
 14. **La parte más abstracta del proyecto: ítems, CLOSURE y GOTO.** Las explicaciones con estados y "cajas" no se entendían.
    → Lo que funcionó: (1) practicar primero shift-reduce como juego; (2) la analogía del dedo en una lista de mercado; (3) relacionarlo con el NFA → DFA de la entrega 1, que ya habíamos programado.
 
+15. **Probar el caso "solo LL(1)".** El Ejemplo 2 del enunciado es LL(1) y también SLR(1), así que muestra el menú; hacía falta una gramática que fuera LL(1) pero no SLR(1).
+   → `S -> AaAb BbBa`, `A -> e`, `B -> e`: LL(1) porque las dos alternativas de S empiezan con letras distintas, pero en SLR(1) la caja 0 tiene `A -> •` y `B -> •` y las dos reducen con `a` y `b` (conflicto reduce/reduce). Quedó en `ejemplos/solo_ll1.txt`.
+
+16. **Cuándo reducir.** Reducir siempre que el punto llegue al final aceptaría palabras malas (como `ii`).
+   → El reduce solo se pega en las letras de FOLLOW(cabeza); el resto de las casillas queda vacío y el parser responde no. Dos letreros distintos en la misma casilla se anotan en `conflictos`.
+
 ---
 
 ## Siguiente paso
-- Escribir `slr.py`: numerar producciones y aumentar la gramática; `closure`, `goto` y la colección de estados (probar que `S → S+i | i` dé 5 estados); tabla ACTION/GOTO con FOLLOW y detección de conflictos; parser LR (Aho 4.6.3).
-- Conectar el SLR(1) a `main.py`: casos "Grammar is SLR(1)." y el menú T / B / Q.
+- Ítem 3 (SDD): Mariana escoge la gramática y los atributos; después se escribe el evaluador (árbol, grafo de dependencias, orden topológico, detección de ciclos).
+- Informe en PDF: la gramática propia con FIRST/FOLLOW, tabla LL(1) o autómata y tabla SLR (usar `imprimir_cajas` e `imprimir_tabla_slr`), y una cadena parseada paso a paso.
+- Web server (bonus) y ensayo de la sustentación.
 
 ## Reparto del trabajo (propuesto el 27 oct)
 - **Camilo:** ítem 2 (parsers LL(1) y SLR(1)).

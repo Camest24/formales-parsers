@@ -18,3 +18,5 @@ Anotar aquí cada uso, para no olvidarlo al final. **Esta carpeta `notas/` NO se
 | 27 oct 2026 | Claude | Conectar el parser LL(1) a `main.py`, escribir `test_ll1.py` y documentar el LL(1) en el README. |
 | 28 oct 2026 | Claude | Redactar el prompt con el que Mariana arrancó el ítem 3 en otro chat. |
 | 28 oct 2026 | Claude | Explicar shift-reduce, ítems LR(0), CLOSURE y GOTO con juegos interactivos, analogías (lista de mercado) y la relación con el NFA → DFA de la entrega 1; calculamos estados a mano guiados. |
+| 1 nov 2026 | Claude | Escribir y explicar el SLR(1) en `slr.py` (tabla ACTION/GOTO y parser LR), conectar los 4 casos en `main.py`, escribir `test_slr.py` y documentarlo en el README. |
+| 1 nov 2026 | Claude | Explicar el llenado de la tabla SLR con analogías y juegos interactivos. |
