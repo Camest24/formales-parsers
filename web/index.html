@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Formal Languages parsers</title>
+<style>
+  :root { --bg:#f6f5f1; --card:#fff; --text:#222; --muted:#666; --line:#ddd; --accent:#2f5d9e; --ok:#2e7d32; --bad:#c62828; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#1b1b1a; --card:#252524; --text:#eee; --muted:#aaa; --line:#3a3a38; --accent:#7fa8e0; --ok:#7bc47f; --bad:#ef7b7b; } }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 system-ui, sans-serif; }
+  main { max-width:960px; margin:0 auto; padding:24px 16px 60px; }
+  h1 { font-size:22px; font-weight:600; margin:0 0 4px; }
+  h2 { font-size:17px; font-weight:600; margin:0 0 10px; }
+  .sub { color:var(--muted); margin:0 0 20px; }
+  section { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:16px; }
+  textarea, input, select { font:14px ui-monospace, Consolas, monospace; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:8px; box-sizing:border-box; }
+  textarea { width:100%; }
+  button { font:14px system-ui, sans-serif; padding:7px 14px; border-radius:6px; border:1px solid var(--accent); background:transparent; color:var(--accent); cursor:pointer; }
+  button:hover { background:var(--accent); color:var(--card); }
+  .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:10px; }
+  pre { background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:10px; overflow-x:auto; font:13px/1.45 ui-monospace, Consolas, monospace; margin:10px 0 0; }
+  .yes { color:var(--ok); font-weight:600; } .no { color:var(--bad); font-weight:600; }
+  .tree ul { list-style:none; margin:0; padding-left:22px; border-left:1px dashed var(--line); }
+  .tree > ul { padding-left:0; border-left:none; }
+  .tree li { margin:3px 0; font:13px ui-monospace, Consolas, monospace; }
+  .attrs { color:var(--accent); }
+  .hint { color:var(--muted); font-size:13px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>FIRST/FOLLOW, LL(1), SLR(1) and SDD evaluator</h1>
+  <p class="sub">Formal Languages (SI2002), EAFIT. The page sends each request to <code>app.py</code>, which calls the same code as the console program.</p>
+
+  <section>
+    <h2>1. Grammar</h2>
+    <textarea id="grammar" rows="6" spellcheck="false"></textarea>
+    <p class="hint">Same format as the console: first the number of productions, then one per line (<code>e</code> is ε).</p>
+    <div class="row">
+      <button onclick="sets()">FIRST and FOLLOW</button>
+      <button onclick="tables()">Tables and automaton</button>
+    </div>
+    <div id="out1"></div>
+  </section>
+
+  <section>
+    <h2>2. Parse a string</h2>
+    <div class="row">
+      <input id="word" value="faatv" placeholder="string (e = empty)" size="24">
+      <select id="parser"><option value="B">SLR(1) (with trace)</option><option value="T">LL(1)</option></select>
+      <button onclick="parse()">Parse</button>
+    </div>
+    <div id="out2"></div>
+  </section>
+
+  <section>
+    <h2>3. SDD evaluator</h2>
+    <div class="row">
+      <select id="sddfile" onchange="loadSdd()"></select>
+      <span class="hint">The SDD is data: you can edit it here.</span>
+    </div>
+    <textarea id="sdd" rows="12" spellcheck="false" style="margin-top:10px"></textarea>
+    <div class="row">
+      <input id="sddword" value="faatv" placeholder="string (e = empty)" size="24">
+      <button onclick="evaluateSdd()">Evaluate</button>
+    </div>
+    <div id="out3"></div>
+  </section>
+</main>
+<script>
+let examples = { sdds: {} };
+
+async function ask(path, body) {
+  const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  return r.json();
+}
+function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function pre(text) { return "<pre>" + esc(text) + "</pre>"; }
+function error(r) { return r.error ? '<p class="no">' + esc(r.error) + "</p>" : ""; }
+function grammar() { return document.getElementById("grammar").value; }
+
+async function sets() {
+  const r = await ask("/api/sets", { grammar: grammar() });
+  document.getElementById("out1").innerHTML = error(r) || pre(r.text);
+}
+async function tables() {
+  const r = await ask("/api/tables", { grammar: grammar() });
+  document.getElementById("out1").innerHTML = error(r) ||
+    "<p><b>" + esc(r.kind) + "</b></p>" + "<p>LL(1) table</p>" + pre(r.ll1_table) +
+    "<p>LR(0) automaton</p>" + pre(r.automaton) + "<p>SLR(1) table</p>" + pre(r.slr_table);
+}
+async function parse() {
+  const r = await ask("/api/parse", { grammar: grammar(), word: document.getElementById("word").value, parser: document.getElementById("parser").value });
+  document.getElementById("out2").innerHTML = error(r) ||
+    '<p class="' + r.answer + '">' + r.answer + "</p>" + (r.trace ? pre(r.trace) : "");
+}
+function treeHtml(n) {
+  const attrs = Object.entries(n.attrs).map(([k, v]) => k + "=" + v).join(", ");
+  let h = "<li><b>" + esc(n.name) + "</b> " + (attrs ? '<span class="attrs">[' + esc(attrs) + "]</span>" : "");
+  if (n.children.length) h += "<ul>" + n.children.map(treeHtml).join("") + "</ul>";
+  else if (/^[A-Z]/.test(n.symbol)) h += "<ul><li>e</li></ul>";
+  return h + "</li>";
+}
+async function evaluateSdd() {
+  const r = await ask("/api/sdd", { sdd: document.getElementById("sdd").value, word: document.getElementById("sddword").value });
+  let h = error(r);
+  if (!h) {
+    if (!r.belongs) h = '<p class="no">no</p>';
+    else if (r.circular) h = '<p class="no">circular</p>' + pre("Cycle: " + r.cycle.join(" -> "));
+    else h = '<p class="yes">' + esc(r.main) + " = " + esc(r.value) + '</p><div class="tree"><ul>' + treeHtml(r.tree) + "</ul></div>";
+    if (r.belongs) h += "<details><summary>Dependency graph and evaluation order</summary>" + pre(r.text) + "</details>";
+  }
+  document.getElementById("out3").innerHTML = h;
+}
+function loadSdd() {
+  document.getElementById("sdd").value = examples.sdds[document.getElementById("sddfile").value] || "";
+}
+fetch("/api/examples").then(r => r.json()).then(ex => {
+  examples = ex;
+  document.getElementById("grammar").value = ex.grammar;
+  const sel = document.getElementById("sddfile");
+  sel.innerHTML = Object.keys(ex.sdds).map(n => "<option>" + esc(n) + "</option>").join("");
+  loadSdd();
+});
+</script>
+</body>
+</html>
