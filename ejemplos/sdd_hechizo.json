@@ -1,0 +1,28 @@
+{
+  "name": "Magic spell score",
+  "grammar": ["3", "S -> H", "H -> EH e", "E -> f a t v"],
+  "attributes": {
+    "S": {
+      "pts": {"kind": "synthesized", "type": "integer", "meaning": "Total points of the spell"}
+    },
+    "H": {
+      "ant": {"kind": "inherited", "type": "character", "meaning": "Previous element; n if there is none"},
+      "pts": {"kind": "synthesized", "type": "integer", "meaning": "Points of the elements from here on"}
+    },
+    "E": {
+      "ant": {"kind": "inherited", "type": "character", "meaning": "Previous element; n if there is none"},
+      "el": {"kind": "synthesized", "type": "character", "meaning": "Element that E has just read"},
+      "pts": {"kind": "synthesized", "type": "integer", "meaning": "1 if the element changed, else 0"}
+    }
+  },
+  "main": "pts",
+  "rules": {
+    "S -> H": ["H.ant = 'n'", "S.pts = H.pts"],
+    "H -> E H1": ["E.ant = H.ant", "H1.ant = E.el", "H.pts = E.pts + H1.pts"],
+    "H -> e": ["H.pts = 0"],
+    "E -> f": ["E.el = f.lexval", "E.pts = 1 if (E.ant != 'n' and E.ant != E.el) else 0"],
+    "E -> a": ["E.el = a.lexval", "E.pts = 1 if (E.ant != 'n' and E.ant != E.el) else 0"],
+    "E -> t": ["E.el = t.lexval", "E.pts = 1 if (E.ant != 'n' and E.ant != E.el) else 0"],
+    "E -> v": ["E.el = v.lexval", "E.pts = 1 if (E.ant != 'n' and E.ant != E.el) else 0"]
+  }
+}
