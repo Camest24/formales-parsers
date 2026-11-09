@@ -18,3 +18,7 @@ Thumbs.db
 *.out
 *.toc
 *.synctex.gz
+
+# Internal notes (not part of the submission)
+notas/
+ejemplos/_borrar_*
