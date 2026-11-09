@@ -144,14 +144,17 @@ def parsear_slr(producciones, action, goto_tabla, palabra, traza=False):  # paso
 def imprimir_tabla_slr(producciones, action, goto_tabla, n_cajas):  # muestra la tabla (sirve para el informe)
     letras = sorted({a for (_, a) in action if a != "$"}) + ["$"]  # columnas de ACTION
     nts = sorted({X for (_, X) in goto_tabla})  # columnas de GOTO
-    print("Caja | " + " | ".join(letras) + " || " + " | ".join(nts))  # encabezado
+    filas = [["Caja"] + letras + ["||"] + nts]  # encabezado; || separa ACTION de GOTO
     for i in range(n_cajas):  # una fila por caja
         celdas = []
         for a in letras:  # columnas de ACTION
             ac = action.get((i, a))
             celdas.append("" if ac is None else "acc" if ac[0] == "acc" else ac[0] + str(ac[1]))
         gs = [str(goto_tabla.get((i, X), "")) for X in nts]  # columnas de GOTO
-        print(f"{i:>4} | " + " | ".join(celdas) + " || " + " | ".join(gs))  # fila
+        filas.append([str(i)] + celdas + ["||"] + gs)
+    ancho = max(len(t) for fila in filas for t in fila)  # todas las columnas del mismo ancho
+    for fila in filas:
+        print(" ".join(t.ljust(ancho) for t in fila).rstrip())
 
 
 if __name__ == "__main__":  # prueba rápida: la gramática del mapa del 28 oct

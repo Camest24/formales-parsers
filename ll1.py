@@ -55,6 +55,18 @@ def parsear_ll1(tabla, palabra):  # parser con pila (Aho 4.4.4, Algoritmo 4.34):
             return False  # no
 
 
+def imprimir_tabla_ll1(gramatica, tabla):  # muestra la tabla M[A, a] (sirve para el informe)
+    letras = sorted({a for (_, a) in tabla if a != "$"}) + ["$"]  # columnas: terminales y $ al final
+
+    def celda(A, a):  # texto de una casilla; si hay conflicto, las alternativas van separadas por /
+        return " / ".join(A + " -> " + ("".join(alt) or "e") for alt in tabla.get((A, a), []))
+
+    filas = [[""] + letras] + [[A] + [celda(A, a) for a in letras] for A in gramatica]  # encabezado + una fila por no terminal
+    ancho = max(len(t) for fila in filas for t in fila)  # todas las columnas del mismo ancho
+    for fila in filas:
+        print(" | ".join(t.ljust(ancho) for t in fila))
+
+
 if __name__ == "__main__":  # esto solo corre con: python ll1.py (es una prueba rápida)
     from grammar import leer_gramatica, calcular_first, calcular_follow  # funciones del ítem 1
 

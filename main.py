@@ -1,7 +1,8 @@
 import sys  # para leer las opciones de la consola (sys.argv)
 from grammar import leer_gramatica, calcular_first, calcular_follow, imprimir_sets
-from ll1 import construir_tabla_ll1, es_ll1, parsear_ll1
+from ll1 import construir_tabla_ll1, es_ll1, parsear_ll1, imprimir_tabla_ll1
 from slr import numerar_producciones, construir_cajas, construir_tabla_slr, es_slr1, parsear_slr
+from slr import imprimir_cajas, imprimir_tabla_slr
 
 
 def leer_palabra():  # lee una cadena a analizar; devuelve None cuando ya no hay más
@@ -36,6 +37,14 @@ def main():  # punto de entrada del programa
     cajas, flechas = construir_cajas(producciones)  # el mapa de cajas
     action, goto_tabla, conflictos = construir_tabla_slr(producciones, cajas, flechas, follow)  # letreros
     es_slr_ok = es_slr1(conflictos)  # ¿la tabla SLR no tiene choques?
+
+    if "--tables" in sys.argv:  # si se corrió con: python main.py --tables
+        print("LL(1) table:")
+        imprimir_tabla_ll1(gramatica, tabla_ll1)  # el directorio LL(1)
+        print("LR(0) automaton:")
+        imprimir_cajas(cajas, flechas, producciones)  # las cajas y sus flechas
+        print("SLR(1) table:")
+        imprimir_tabla_slr(producciones, action, goto_tabla, len(cajas))  # ACTION y GOTO
 
     def parsear_t(palabra):  # parser LL(1) para una palabra
         return parsear_ll1(tabla_ll1, palabra)
