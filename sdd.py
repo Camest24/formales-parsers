@@ -318,7 +318,8 @@ def imprimir_arbol(raiz, sdd):  # el árbol anotado, indentado
 
 
 def arbol_a_dict(n, sdd):  # el árbol como diccionario (sirve para el servidor web)
-    return {"name": n.nombre, "symbol": n.simbolo, "attrs": dict(n.attrs),
+    nombres = ["lexval"] if n.produccion is None else list(sdd["atributos"].get(n.simbolo, {}))  # en el orden declarado
+    return {"name": n.nombre, "symbol": n.simbolo, "attrs": {a: n.attrs[a] for a in nombres if a in n.attrs},
             "children": [arbol_a_dict(h, sdd) for h in n.hijos]}
 
 
