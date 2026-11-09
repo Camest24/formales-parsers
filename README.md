@@ -19,7 +19,7 @@ Class number: SI2002-4368 (Formal Languages, 2026-2)
 
 | File | Contents |
 |---|---|
-| `main.py` | Console program: reads the grammar from standard input (`--sets` and `--trace` options) |
+| `main.py` | Console program of Items 1 and 2: reads the grammar from standard input (`--sets`, `--tables` and `--trace` options) |
 | `grammar.py` | Grammar reading, FIRST and FOLLOW sets, `--sets` output format (Item 1) |
 | `slr.py` | LR(0) automaton, SLR(1) table and LR parser (Item 2) |
 | `ll1.py` | LL(1) parsing table, LL(1) test and table-driven predictive parser (Item 2) |
@@ -28,9 +28,9 @@ Class number: SI2002-4368 (Formal Languages, 2026-2)
 | `test_ll1.py` | Unit tests for `ll1.py` |
 | `test_slr.py` | Unit tests for `slr.py` |
 | `test_sdd.py` | Unit tests for `sdd.py` |
+| `app.py`, `web/index.html` | Web server and web page (bonus) |
+| `informe.tex`, `informe.pdf` | Report (in Spanish) |
 | `ejemplos/` | Inputs of the examples of the assignment, and our SDD files (`sdd_*.json`) |
-
-<!-- TODO: add app.py (web server) when it exists -->
 
 ## How to run
 
@@ -73,6 +73,14 @@ Grammar is SLR(1).
 yes
 yes
 no
+```
+
+#### Tables and automaton (`--tables`)
+
+With the `--tables` option, the program prints the LL(1) table, the LR(0) automaton (states and transitions) and the SLR(1) table:
+
+```
+python main.py --tables < ejemplos/gramatica_hechizo.txt
 ```
 
 #### Step-by-step trace of the SLR(1) parser (`--trace`)
@@ -137,7 +145,21 @@ Before evaluating, the program checks the SDD: `S` has no inherited attributes, 
 
 ### Web server (bonus)
 
-<!-- TODO -->
+```
+python app.py
+```
+
+Then open `http://localhost:8000` in a browser (stop the server with `Ctrl+C`). The page has the grammar (our spell grammar by default), buttons for FIRST/FOLLOW and for the tables and automaton, a box to parse a string with LL(1) or SLR(1) (with the trace), and the SDD evaluator, where the SDD can be edited and the annotated tree is drawn.
+
+The server only uses the standard library (`http.server`). It does not repeat any logic: each request calls the same functions as the console programs and returns JSON. The endpoints are:
+
+| Endpoint | Request (JSON) | Response |
+|---|---|---|
+| `POST /api/sets` | `grammar` | FIRST and FOLLOW |
+| `POST /api/tables` | `grammar` | LL(1) table, LR(0) automaton, SLR(1) table and which of the four cases the grammar is |
+| `POST /api/parse` | `grammar`, `word`, `parser` (`T` or `B`) | `yes` / `no` and the SLR(1) trace |
+| `POST /api/sdd` | `sdd` (the JSON text), `word` | annotated tree, dependency graph, order and value, or `circular` and the cycle |
+| `GET /api/examples` | | the spell grammar and the SDD files of `ejemplos/` |
 
 ## Tests
 
@@ -179,4 +201,10 @@ All algorithms follow Aho et al., *Compilers: Principles, Techniques, and Tools*
 
 ## Use of generative AI tools
 
-<!-- TODO: write the final summary from notas/uso_ia.md before submitting -->
+We came up with the ideas and the structure, and the AI tools helped us turn them into code. For every algorithm we first read the book and worked it out by hand with small examples (FIRST and FOLLOW, LL(1) tables, LR(0) states, the SLR table, and the annotated tree and dependency graph of the SDD). Then we decided how to represent it (for example, ε as an empty list, or the SDD as a JSON file), asked the AI for the code, and reviewed and tested it against our hand results.
+
+- **Claude** (Anthropic): explained the topics with analogies and interactive exercises, and helped us write the code of the modules, the tests, this README and the report. It also showed us Python functions and modules we did not know, such as `frozenset`, `setdefault`, `ast`, `contextlib.redirect_stdout` and `http.server`.
+- **Gemini** (Google): translated and summarized sections of the book before we read them.
+- **Claude Code**: made the commits and set up the GitHub repository.
+
+The SDD (the spell idea, the attributes, the rules and the classification) was designed by Mariana through guided step-by-step exercises, and the hand-made examples were done by us.
