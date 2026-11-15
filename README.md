@@ -201,7 +201,7 @@ All algorithms follow Aho et al., *Compilers: Principles, Techniques, and Tools*
 
 ## Use of generative AI tools
 
-We came up with the ideas and the structure, and the AI tools helped us turn them into code. For every algorithm we first read the book and worked it out by hand with small examples (FIRST and FOLLOW, LL(1) tables, LR(0) states, the SLR table, and the annotated tree and dependency graph of the SDD). Then we decided how to represent it (for example, ε as an empty list, or the SDD as a JSON file), asked the AI for the code, and reviewed and tested it against our hand results.
+We always worked the same way: first we studied each topic in the book and took the ideas from it, then we explained those ideas to the AI and asked it to suggest how to turn them into code. For every algorithm we first read the book and worked it out by hand with small examples (FIRST and FOLLOW, LL(1) tables, LR(0) states, the SLR table, and the annotated tree and dependency graph of the SDD). With those ideas we decided how to represent it (for example, ε as an empty list, or the SDD as a JSON file) and explained it to the AI. The AI suggested how to write it in code; we reviewed that suggestion line by line, adjusted it, and tested it against our hand results.
 
 - **Claude** (Anthropic): explained the topics with analogies and interactive exercises, and helped us write the code of the modules, the tests, this README and the report. It also showed us Python functions and modules we did not know, such as `frozenset`, `setdefault`, `ast`, `contextlib.redirect_stdout` and `http.server`.
 - **Gemini** (Google): translated and summarized sections of the book before we read them.

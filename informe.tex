@@ -298,12 +298,16 @@ En cada producción, cada atributo se define una sola vez y solo con atributos d
 
 \subsection{Ejemplo a mano: \code{f a a t v}}
 
-% TODO: reemplazar este recuadro por la foto del dibujo a mano de Mariana:
-% \includegraphics[width=\textwidth]{dibujo_mano.jpg}
+Estas son las tres entregas del ejemplo a mano, hechas por nosotros. En los dibujos los \code{H} se numeran desde \code{H0}; el programa los numera desde \code{H1} (el \code{H0} del dibujo es el \code{H1} del programa, y así sucesivamente).
+
 \begin{center}
-\fbox{\parbox{0.9\textwidth}{\centering\vspace{2cm}
-\textbf{Foto del dibujo a mano:} árbol anotado, grafo de dependencias y orden topológico de \code{f a a t v}.
-\vspace{2cm}}}
+\includegraphics[width=0.6\textwidth]{figuras/arbol_faatv.png}\\[4pt]
+{\small \textbf{Entrega 1 · Árbol anotado} de \code{f a a t v}: cada nodo con sus atributos (\code{ant}, \code{el}, \code{pts}, \code{lexval}). El resultado es \code{S.pts = 3}.}
+\end{center}
+
+\begin{center}
+\includegraphics[width=\textwidth]{figuras/grafo_faatv.png}\\[4pt]
+{\small \textbf{Entregas 2 y 3 · Grafo de dependencias y orden topológico}: 33 atributos y 36 aristas (naranja: dentro de cada \code{E}, 15; verde: \code{ant} baja, 10; rosado: \code{pts} sube, 11). El número junto a cada atributo es nuestro orden topológico, del 1 al 33: toda arista va de un número menor a uno mayor, así que es un orden de evaluación válido.}
 \end{center}
 
 El dibujo a mano coincide con lo que calcula el programa
@@ -459,10 +463,10 @@ Hay 55 pruebas unitarias (\code{python -m unittest test\_grammar test\_ll1 test\
 
 \section{Uso de herramientas de inteligencia artificial}
 
-Usamos tres herramientas, siempre con la misma forma de trabajo: \textbf{las ideas y la estructura las poníamos nosotros, y la IA nos ayudaba a pasarlas a código}.
+Usamos tres herramientas, siempre con la misma forma de trabajo: \textbf{primero estudiábamos cada tema en el libro y sacábamos las ideas; después se las explicábamos a la IA y le pedíamos que nos sugiriera cómo pasarlas a código}.
 
 \begin{itemize}
-  \item \textbf{Cómo trabajamos.} Para cada algoritmo, primero lo leíamos en el libro y lo hacíamos a mano con ejemplos pequeños (FIRST y FOLLOW, tablas LL(1), cajas LR(0), tabla SLR, el árbol y el grafo del SDD). Después decidíamos cómo representarlo (por ejemplo, $\varepsilon$ como lista vacía, o el SDD como un archivo JSON) y con eso le pedíamos a la IA el código, que revisábamos línea por línea y probábamos contra nuestros resultados a mano.
+  \item \textbf{Cómo trabajamos.} Para cada algoritmo, primero lo leíamos en el libro y lo hacíamos a mano con ejemplos pequeños (FIRST y FOLLOW, tablas LL(1), cajas LR(0), tabla SLR, el árbol y el grafo del SDD). Con esas ideas decidíamos cómo representarlo (por ejemplo, $\varepsilon$ como lista vacía, o el SDD como un archivo JSON) y se lo explicábamos a la IA. La IA nos sugería cómo escribirlo en código; nosotros revisábamos esa sugerencia línea por línea, la ajustábamos y la probábamos contra nuestros resultados a mano.
   \item \textbf{Claude} (Anthropic): nos explicó los temas con analogías y ejercicios interactivos, y nos ayudó a escribir el código de los módulos, las pruebas, el README y este informe. También nos mostró funciones y módulos de Python que no conocíamos, como \code{frozenset}, \code{setdefault}, \code{ast}, \code{redirect\_stdout} y \code{http.server}.
   \item \textbf{Gemini} (Google): para traducir y resumir secciones del libro antes de leerlas.
   \item \textbf{Claude Code}: para los commits y el repositorio de GitHub.

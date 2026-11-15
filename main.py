@@ -1,9 +1,27 @@
+# main.py: el programa de los ítems 1 y 2. Es el "director": no calcula nada por sí mismo,
+# llama a las piezas de grammar.py, ll1.py y slr.py y decide qué hacer.
+
+#
+# MAPA DEL ARCHIVO
+#   APOYO ........................ leer_palabra: lee una cadena (línea vacía = fin, "e" = cadena vacía)
+#   main():
+#     PARTE 1 · LEER Y CALCULAR .. la gramática, FIRST y FOLLOW              (con --sets los imprime)
+#     PARTE 2 · LAS DOS TABLAS ... LL(1) y SLR(1): ¿es LL(1)? ¿es SLR(1)?    (con --tables las imprime)
+#     PARTE 3 · LOS PARSERS ...... parsear_t (LL(1)), parsear_b (SLR(1)) y el bucle que responde yes/no
+#     PARTE 4 · LOS 4 CASOS ...... el menú T/B/Q o el mensaje exacto del enunciado
+#
+# Uso: python main.py [--sets] [--tables] [--trace] < ejemplos\gramatica_hechizo.txt
+
 import sys  # para leer las opciones de la consola (sys.argv)
-from grammar import leer_gramatica, calcular_first, calcular_follow, imprimir_sets
-from ll1 import construir_tabla_ll1, es_ll1, parsear_ll1, imprimir_tabla_ll1
-from slr import numerar_producciones, construir_cajas, construir_tabla_slr, es_slr1, parsear_slr
+from grammar import leer_gramatica, calcular_first, calcular_follow, imprimir_sets  # ítem 1
+from ll1 import construir_tabla_ll1, es_ll1, parsear_ll1, imprimir_tabla_ll1  # ítem 2: LL(1)
+from slr import numerar_producciones, construir_cajas, construir_tabla_slr, es_slr1, parsear_slr  # ítem 2: SLR(1)
 from slr import imprimir_cajas, imprimir_tabla_slr
 
+
+# ============================================================
+#  APOYO: leer una cadena a analizar
+# ============================================================
 
 def leer_palabra():  # lee una cadena a analizar; devuelve None cuando ya no hay más
     try:  # intenta leer una línea
@@ -17,8 +35,15 @@ def leer_palabra():  # lee una cadena a analizar; devuelve None cuando ya no hay
     return linea  # una cadena normal, ej: "adbc"
 
 
+# ============================================================
+#  EL PROGRAMA: main() en 4 partes
+# ============================================================
+
 def main():  # punto de entrada del programa
-    n = int(input())  # primera línea: cuántas producciones vienen
+    # ============================================================
+    #  PARTE 1 · LEER LA GRAMÁTICA Y CALCULAR FIRST Y FOLLOW (ítem 1)
+    # ============================================================
+    n = int(input())  # primera línea: cuántos no terminales (líneas de producciones) vienen
     lineas = [str(n)]  # leer_gramatica espera la lista completa, con el número de primero
     for i in range(n):  # leemos exactamente n líneas más
         lineas.append(input())  # cada una es una producción
@@ -30,6 +55,9 @@ def main():  # punto de entrada del programa
     if "--sets" in sys.argv:  # si se corrió con: python main.py --sets
         imprimir_sets(gramatica, first, follow)  # imprime los conjuntos
 
+    # ============================================================
+    #  PARTE 2 · LAS DOS TABLAS: ¿es LL(1)? ¿es SLR(1)? (ítem 2)
+    # ============================================================
     tabla_ll1 = construir_tabla_ll1(gramatica, first, follow)  # el directorio LL(1)
     es_ll1_ok = es_ll1(tabla_ll1)  # ¿la tabla LL(1) no tiene choques?
 
@@ -46,6 +74,11 @@ def main():  # punto de entrada del programa
         print("SLR(1) table:")
         imprimir_tabla_slr(producciones, action, goto_tabla, len(cajas))  # ACTION y GOTO
 
+    # ============================================================
+    #  PARTE 3 · LOS PARSERS LISTOS PARA USAR Y EL BUCLE QUE RESPONDE yes/no
+    #  parsear_t = analiza una cadena con LL(1); parsear_b = con SLR(1);
+    #  responder_palabras = lee cadenas hasta la línea vacía y responde con el que le toque
+    # ============================================================
     def parsear_t(palabra):  # parser LL(1) para una palabra
         return parsear_ll1(tabla_ll1, palabra)
 
@@ -62,6 +95,9 @@ def main():  # punto de entrada del programa
             print("yes" if parsear(palabra) else "no")  # responde
             palabra = leer_palabra()  # siguiente cadena
 
+    # ============================================================
+    #  PARTE 4 · LOS 4 CASOS DEL ENUNCIADO
+    # ============================================================
     if es_ll1_ok and es_slr_ok:  # caso 1: las dos
         while True:  # menú hasta que den Q
             print("Select a parser (T: for LL(1), B: for SLR(1), Q: quit):")  # mensaje exacto del enunciado
@@ -84,6 +120,10 @@ def main():  # punto de entrada del programa
     else:  # caso 4: ninguna
         print("Grammar is neither LL(1) nor SLR(1).")  # mensaje exacto del enunciado
 
+
+# ============================================================
+#  ARRANQUE
+# ============================================================
 
 if __name__ == "__main__":  # solo corre al ejecutar este archivo directamente
     main()

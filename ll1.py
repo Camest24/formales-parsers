@@ -3,6 +3,7 @@
 from grammar import first_de_cadena  # traemos de grammar.py la función que da el FIRST de una alternativa
 
 
+#Construye y llena el Diccionarioe
 def construir_tabla_ll1(gramatica, first, follow):  # arma la tabla M[A, a] (Algoritmo 4.31 del libro)
     tabla = {}  # diccionario vacío: llave (fila, columna) -> lista de alternativas de esa casilla
 
@@ -29,30 +30,46 @@ def es_ll1(tabla):  # una gramática es LL(1) si ninguna casilla tiene dos alter
     return True  # revisó todas y ninguna tenía conflicto: SÍ es LL(1)
 
 
-def parsear_ll1(tabla, palabra):  # parser con pila (Aho 4.4.4, Algoritmo 4.34): True = yes, False = no
-    pila = ["$", "S"]  # lista "espero leer": el FINAL de la lista es la ficha de adelante
-    entrada = list(palabra) + ["$"]  # lista "me falta": la palabra con $ al final
-    i = 0  # posición de la letra que toca en la entrada
+def parsear_ll1(tabla, palabra, traza=False):  # traza=True imprime Pila / Entrada / Acción en cada paso
+    pila = ["$", "S"]                # lo que espero leer (el tope es el último)
+    entrada = list(palabra) + ["$"]  # lo que me falta, con $ al final
+    i = 0                            # en qué letra de la entrada voy
+    if traza:                        # (solo imprime) encabezado de la traza
+        print(f"{'Pila':<16}{'Entrada':<10}Acción")
 
-    while True:  # repite pasos hasta que salga yes o no
-        X = pila[-1]  # ficha de adelante de "espero leer" ([-1] = el último de la lista)
-        a = entrada[i]  # letra que toca
+    while True:
+        X = pila[-1]                 # tope de la pila
+        a = entrada[i]               # letra que toca
+        fila = f"{' '.join(pila):<16}{''.join(entrada[i:]):<10}"  # (solo imprime) pila y entrada de este paso
 
-        if X == "$" and a == "$":  # las dos listas quedaron vacías al mismo tiempo
-            return True  # yes
+        # ACEPTAR: no espero nada y no me falta nada
+        if X == "$" and a == "$":
+            if traza:
+                print(fila + "ACEPTAR -> yes")
+            return True
 
-        if X == a:  # MOVIMIENTO 1: las dos fichas son iguales
-            pila.pop()  # la tacho de "espero leer" (pop quita el último)
-            i += 1  # y avanzo en la palabra
+        # TACHAR: el tope es igual a la letra → las dos se van
+        if X == a:
+            if traza:
+                print(fila + f"TACHAR {a}")
+            pila.pop()               # saco el tope
+            i += 1                   # avanzo en la entrada
 
-        elif X.isupper() and (X, a) in tabla:  # MOVIMIENTO 2: es mayúscula y el directorio tiene casilla
-            alt = tabla[(X, a)][0]  # la alternativa de la casilla [X, a]
-            pila.pop()  # quito la mayúscula
-            for simbolo in reversed(alt):  # meto la alternativa al revés...
-                pila.append(simbolo)  # ...para que su primera letra quede de adelante
+        # REEMPLAZAR: tope no terminal y la tabla tiene casilla → uso su alternativa
+        elif X.isupper() and (X, a) in tabla:
+            alt = tabla[(X, a)][0]   # [0]: en LL(1) la casilla tiene una sola alternativa
+            if traza:
+                print(fila + f"REEMPLAZAR {X} -> {' '.join(alt) or 'e'}   (casilla M[{X}, {a}])")
+            pila.pop()               # saco el no terminal
+            for simbolo in reversed(alt):    # al revés: la 1ª letra queda en el tope
+                pila.append(simbolo)         # si alt es ε (lista vacía), no entra nada
 
-        else:  # fichas distintas, casilla vacía o una lista se acabó antes
-            return False  # no
+        # ERROR: minúscula distinta, o no terminal sin casilla
+        else:
+            if traza:
+                motivo = f"la casilla M[{X}, {a}] está vacía" if X.isupper() else f"esperaba {X} y llegó {a}"
+                print(fila + f"ERROR: {motivo} -> no")
+            return False
 
 
 def imprimir_tabla_ll1(gramatica, tabla):  # muestra la tabla M[A, a] (sirve para el informe)
@@ -67,18 +84,22 @@ def imprimir_tabla_ll1(gramatica, tabla):  # muestra la tabla M[A, a] (sirve par
         print(" | ".join(t.ljust(ancho) for t in fila))
 
 
-if __name__ == "__main__":  # esto solo corre con: python ll1.py (es una prueba rápida)
+if __name__ == "__main__":  # esto solo corre con: python ll1.py (o el botón ▶). Es una demostración con el hechizo
     from grammar import leer_gramatica, calcular_first, calcular_follow  # funciones del ítem 1
+    import sys
+    sys.stdout.reconfigure(encoding="utf-8")  # para que • y las tildes se vean bien también en el panel Output del botón ▶
 
-    gramatica = leer_gramatica(["3", "S -> AB", "A -> aA d", "B -> bBc e"])  # ejemplo 2 del enunciado
+    gramatica = leer_gramatica(["3", "S -> H", "H -> EH e", "E -> f a t v"])  # el hechizo: S -> H, H -> E H | ε, E -> f | a | t | v
     first = calcular_first(gramatica)  # FIRST de cada no terminal
     follow = calcular_follow(gramatica, first)  # FOLLOW de cada no terminal
     tabla = construir_tabla_ll1(gramatica, first, follow)  # arma la tabla
 
-    for casilla in sorted(tabla):  # recorre las casillas en orden (primero por fila, luego por columna)
-        print(casilla, tabla[casilla])  # imprime: ('A', 'a') [['a', 'A']]
-    print("Es LL(1):", es_ll1(tabla))  # debe decir True
+    print("1) La tabla LL(1) del hechizo:")
+    imprimir_tabla_ll1(gramatica, tabla)
+    print("Es LL(1):", es_ll1(tabla))  # ninguna casilla tiene dos alternativas → True
 
-    for palabra in ["d", "adbc", "a"]:  # las cadenas del ejemplo 2 del enunciado
-        print(palabra, "yes" if parsear_ll1(tabla, palabra) else "no")  # debe dar yes, yes, no
-
+    for palabra in ["fa", "fx"]:  # una que pertenece y una que no
+        print()
+        print(f"2) El parser con pila, paso a paso, con la cadena '{palabra}':")
+        ok = parsear_ll1(tabla, palabra, traza=True)
+        print("Resultado:", "yes" if ok else "no")

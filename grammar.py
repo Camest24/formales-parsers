@@ -1,34 +1,21 @@
 def leer_gramatica(lineas):  # recibe la lista de líneas y devuelve la gramática como diccionario
-    n = int(lineas[0])  # la primera línea dice cuántas producciones hay
-    gramatica = {}  # aquí guardamos no terminal -> lista de alternativas
+    n = int(lineas[0])  # la 1ª línea dice cuántas producciones vienen
+    gramatica = {}  # libreta vacía: una hoja por cada letra mayúscula
 
-    for i in range(1, n + 1):  # recorre las n líneas de producciones
-        cabeza, cuerpo = lineas[i].split("->", 1)  # "A -> aA d" se corta en "A " y " aA d"
-        cabeza = cabeza.strip()  # quita espacios: "A " queda "A"
+    for i in range(1, n + 1): # una vuelta por cada producción (la línea 0 es el número, no cuenta)
+        cabeza, cuerpo = lineas[i].split("->", 1) # separa "H -> EH e" en izquierda y derecha
+        cabeza = cabeza.strip()  # "H " queda "H"
 
-        alternativas = []  # alternativas de esta cabeza
-        for alt in cuerpo.split():  # separa por espacios: "aA", "d"
-            if alt == "e":  # "e" es épsilon
-                alternativas.append([])  # épsilon se guarda como lista vacía
+        alternativas = []    # hoja nueva para esta cabeza
+        for alt in cuerpo.split():  # una vuelta por alternativa: "EH", "e"
+            if alt == "e":  
+                alternativas.append([])  #épsilon = lista vacía
             else:
-                alternativas.append(list(alt))  # "aA" se vuelve ['a', 'A']
+                alternativas.append(list(alt))   # "EH" se desarma en ["E","H"]
 
-        gramatica[cabeza] = alternativas  # gramatica["A"] = [['a','A'], ['d']]
+        gramatica[cabeza] = alternativas  # guardo la hoja: "H" → sus alternativas
 
-    return gramatica
-
-
-def first_de_cadena(simbolos, first):  # FIRST de una cadena X1 X2 ... Xn (regla 3 del libro)
-    resultado = set()  # conjunto vacío donde juntamos las letras
-    for X in simbolos:  # recorre los símbolos de izquierda a derecha
-        if not X.isupper():  # si X es terminal (minúscula o símbolo)
-            resultado.add(X)  # la cadena empieza con esa letra
-            return resultado  # un terminal nunca desaparece: paramos aquí
-        resultado |= first[X] - {"e"}  # agrega FIRST(X) sin épsilon
-        if "e" not in first[X]:  # si X NO puede desaparecer
-            return resultado  # paramos aquí
-    resultado.add("e")  # todos desaparecieron (o la cadena era vacía): entra épsilon
-    return resultado
+    return gramatica # devuelvo la gramática ya armada
 
 
 def calcular_first(gramatica):  # FIRST de cada no terminal (Aho 4.4.2)
@@ -47,7 +34,7 @@ def calcular_first(gramatica):  # FIRST de cada no terminal (Aho 4.4.2)
 
 def calcular_follow(gramatica, first):  # FOLLOW de cada no terminal (Aho 4.4.2)
     follow = {A: set() for A in gramatica}  # empieza vacío para cada no terminal
-    follow["S"].add("$")  # regla 1: S es el inicial, $ siempre lo sigue
+    follow["S"].add("$")  # regla 1: S es el inicial, $ siempre lo sigue                     #REGLA 1, Condicion De S
     cambio = True  # bandera: ¿algún conjunto creció en esta vuelta?
     while cambio:  # repite vueltas hasta que nada cambie
         cambio = False  # suponemos que esta vuelta no cambia nada
@@ -59,13 +46,12 @@ def calcular_follow(gramatica, first):  # FOLLOW de cada no terminal (Aho 4.4.2)
                     antes = len(follow[X])  # tamaño antes de agregar
                     derecha = alt[i + 1:]  # todo lo que está a la derecha de X
                     f = first_de_cadena(derecha, first)  # con qué empieza lo de la derecha
-                    follow[X] |= f - {"e"}  # regla 2: se suma el vecino (sin épsilon)
-                    if "e" in f:  # regla 3: X al final, o lo de la derecha desaparece
-                        follow[X] |= follow[A]  # X se roba el FOLLOW de la cabeza
+                    follow[X] |= f - {"e"}  # regla 2: se suma el vecino (sin épsilon)      #REGLA 2 , si tengo un vecino,le copio el first 
+                    if "e" in f:  # regla 3: X al final, o lo de la derecha desaparece      
+                        follow[X] |= follow[A]  # X se roba el FOLLOW de la cabeza        #REGLA 3, Si estoy al final le robo el follow a mi cabeza
                     if len(follow[X]) != antes:  # si creció
                         cambio = True  # hay que dar otra vuelta
     return follow
-
 
 def formatear_conjunto(conjunto):  # convierte {'$', 'b', 'e'} en el texto "{b, e, $}"
     terminales = sorted(x for x in conjunto if x != "e" and x != "$")  # terminales en orden ASCII
@@ -83,8 +69,22 @@ def imprimir_sets(gramatica, first, follow):  # lo que imprime la opción --sets
         print(f"Follow({A}) = {formatear_conjunto(follow[A])}")  # una línea por FOLLOW
 
 
+
+def first_de_cadena(simbolos, first):  # FIRST de una cadena X1 X2 ... Xn (regla 3 del libro)
+    resultado = set()  # conjunto vacío donde juntamos las letras
+    for X in simbolos:  # recorre los símbolos de izquierda a derecha
+        if not X.isupper():  # si X es terminal (minúscula o símbolo)
+            resultado.add(X)  # la cadena empieza con esa letra
+            return resultado  # un terminal nunca desaparece: paramos aquí
+        resultado |= first[X] - {"e"}  # agrega FIRST(X) sin épsilon
+        if "e" not in first[X]:  # si X NO puede desaparecer
+            return resultado  # paramos aquí
+    resultado.add("e")  # todos desaparecieron (o la cadena era vacía): entra épsilon
+    return resultado
+
+
 if __name__ == "__main__":  # solo corre al ejecutar este archivo directamente
-    prueba = ["3", "S -> AB", "A -> aA d", "B -> bBc e"]
+    prueba = ["3", "S -> H", "H -> EH e", "E -> f a t v"]  # el hechizo: S -> H, H -> E H | ε, E -> f | a | t | v
     gramatica = leer_gramatica(prueba)
     first = calcular_first(gramatica)
     follow = calcular_follow(gramatica, first)

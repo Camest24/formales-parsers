@@ -1,5 +1,20 @@
 # sdd.py: evaluador de SDD (Aho 5.1 y 5.2). El SDD vive en un archivo JSON y este código no sabe nada de él.
 # Analogía: el árbol es un organigrama; cada atributo es una ficha por llenar; cada regla dice cómo llenarla.
+#
+# MAPA DEL ARCHIVO (los 4 pasos son los mismos del árbol anotado a mano):
+#   LA FICHA DE CADA NODO ...... class Nodo
+#   PASO 1 · ÁRBOL ............. parsear_slr_arbol (+ numerar_nodos, más abajo)
+#   LEER EL SDD (apoyo) ........ leer_regla, cargar_sdd, validar_sdd, cargar_archivo
+#   PASO 2 · GRAFO ............. construir_grafo        (quién necesita a quién)
+#   PASO 3 · ORDEN ............. orden_topologico       (Kahn; si hay ciclo: circular)
+#   PASO 4 · EVALUAR ........... evaluar_expr, evaluar_cadena  (llenar los post-its)
+#   SALIDA ..................... imprimir_arbol, imprimir_resultado
+#   PROGRAMA PRINCIPAL ......... main
+#
+# Cómo se guardan las cosas:
+#   nodo        ->  Nodo('H', produccion, hijos)    con sus post-its en nodo.attrs
+#   atributo    ->  'H2.ant'                         nombre del nodo + nombre del atributo
+#   flecha      ->  ('E1.el', 'H2.ant')              E1.el se necesita para calcular H2.ant
 import ast  # lee cada regla como una expresión de Python que revisamos nosotros (nunca se usa eval)
 import json  # el SDD se guarda como datos en un archivo JSON
 import operator  # + - == != < ... como funciones
@@ -9,6 +24,10 @@ from collections import deque  # cola para el orden topológico
 from grammar import leer_gramatica, calcular_first, calcular_follow
 from slr import numerar_producciones, construir_cajas, construir_tabla_slr, es_slr1
 
+
+# ============================================================
+#  APOYO: ERRORES Y LA FICHA DE CADA NODO
+# ============================================================
 
 class SDDError(Exception):  # el archivo del SDD está mal hecho
     pass
@@ -24,6 +43,12 @@ class Nodo:  # una ficha del organigrama: un nodo del árbol de derivación
         if not simbolo.isupper():  # un terminal trae su lexval desde el principio
             self.attrs["lexval"] = simbolo  # lexval = el carácter mismo
 
+
+# ============================================================
+#  PASO 1 · ÁRBOL: el mismo parser SLR, pero armando el árbol
+#  shift  -> nace una hoja (la letra leída)
+#  reduce -> los últimos nodos se vuelven hijos de un padre nuevo
+# ============================================================
 
 def parsear_slr_arbol(producciones, action, goto_tabla, palabra):  # igual que parsear_slr pero devuelve el árbol (o None)
     pila = [0]  # pila de cajas
@@ -51,7 +76,12 @@ def parsear_slr_arbol(producciones, action, goto_tabla, palabra):  # igual que p
             return nodos[0]  # lo único que queda es la raíz S
 
 
-# ---------- Leer y revisar el SDD (los datos) ----------
+# ============================================================
+#  LEER EL SDD (apoyo): el JSON -> reglas que Python entiende
+#  Cada regla "H1.ant = E.el" se convierte en: qué post-it llena (destino),
+#  cómo se calcula (expr) y qué post-its lee (usos). Luego se revisa que el
+#  SDD cumpla lo que pide el enunciado (validar_sdd).
+# ============================================================
 
 PERMITIDOS = (ast.Constant, ast.Attribute, ast.Name, ast.Load, ast.BinOp, ast.UnaryOp, ast.BoolOp, ast.Compare,
               ast.IfExp, ast.Call, ast.Add, ast.Sub, ast.Mult, ast.Mod, ast.FloorDiv, ast.USub, ast.Not, ast.And,
@@ -175,7 +205,9 @@ def cargar_archivo(ruta):  # lee un archivo JSON y lo convierte en SDD
         return cargar_sdd(json.load(f))
 
 
-# ---------- Árbol, grafo de dependencias y evaluación ----------
+# ============================================================
+#  PASO 1 (cont.) · NOMBRES DE LOS NODOS: S1, H1, E1, f1...
+# ============================================================
 
 def preorden(raiz):  # los nodos con la raíz primero, luego los hijos de izquierda a derecha (sin recursión)
     lista, pila = [], [raiz]
@@ -192,6 +224,12 @@ def numerar_nodos(raiz):  # le da a cada nodo un nombre único: S1, H1, H2, E1, 
         cuenta[n.simbolo] = cuenta.get(n.simbolo, 0) + 1
         n.nombre = f"{n.simbolo}{cuenta[n.simbolo]}"
 
+
+# ============================================================
+#  PASO 2 · GRAFO: quién necesita a quién
+#  Un vértice por cada post-it de cada nodo, y una flecha desde cada post-it
+#  que una regla lee hasta el post-it que esa regla llena.
+# ============================================================
 
 def construir_grafo(raiz, sdd):  # el grafo de dependencias de este árbol (Aho 5.2.1)
     nodos = preorden(raiz)
@@ -215,6 +253,12 @@ def construir_grafo(raiz, sdd):  # el grafo de dependencias de este árbol (Aho 
                 aristas.append((f"{mapa[nombre].nombre}.{a}", destino))  # flecha: del atributo usado al definido
     return instancias, donde, definicion, aristas
 
+
+# ============================================================
+#  PASO 3 · ORDEN: algoritmo de Kahn
+#  Primero salen los que no dependen de nadie; cada vez que uno sale, a los que
+#  lo esperaban les falta una flecha menos. Si no salen todos, hay un ciclo.
+# ============================================================
 
 def orden_topologico(instancias, aristas):  # Kahn: devuelve (orden, []) o (None, ciclo)
     entran = {x: 0 for x in instancias}  # cuántas flechas le llegan a cada vértice
@@ -243,6 +287,11 @@ def orden_topologico(instancias, aristas):  # Kahn: devuelve (orden, []) o (None
     ciclo = visto[visto.index(x):][::-1]  # el ciclo, en el sentido de las flechas
     return None, ciclo + [ciclo[0]]
 
+
+# ============================================================
+#  PASO 4 · EVALUAR: llenar los post-its en el orden de Kahn
+#  evaluar_expr hace la cuenta de una regla; evaluar_cadena junta los 4 pasos.
+# ============================================================
 
 def evaluar_expr(e, valor):  # calcula una expresión de una regla; valor(nombre, atributo) busca un atributo
     if isinstance(e, ast.Constant):
@@ -278,17 +327,21 @@ def evaluar_expr(e, valor):  # calcula una expresión de una regla; valor(nombre
 def evaluar_cadena(sdd, palabra):  # todo el ítem 3 para una cadena; devuelve un diccionario con el resultado
     resultado = {"pertenece": False, "circular": False, "ciclo": [], "raiz": None,
                  "instancias": [], "aristas": [], "orden": [], "valor": None}
+    # PASO 1 · ÁRBOL
     raiz = parsear_slr_arbol(sdd["producciones"], sdd["action"], sdd["goto"], palabra)  # nuestro parser, con árbol
     if raiz is None:
         return resultado  # no pertenece
     resultado["pertenece"] = True
     numerar_nodos(raiz)
+    # PASO 2 · GRAFO
     instancias, donde, definicion, aristas = construir_grafo(raiz, sdd)
+    # PASO 3 · ORDEN
     orden, ciclo = orden_topologico(instancias, aristas)
     resultado.update(raiz=raiz, instancias=instancias, aristas=aristas)
     if ciclo:  # hay ciclo: el SDD es circular para esta cadena
         resultado.update(circular=True, ciclo=ciclo)
         return resultado
+    # PASO 4 · EVALUAR: un post-it a la vez, en el orden de Kahn
     for clave in orden:  # calcula en el orden topológico
         if clave in definicion:  # los lexval ya vienen llenos
             expr, mapa = definicion[clave]
@@ -299,7 +352,9 @@ def evaluar_cadena(sdd, palabra):  # todo el ítem 3 para una cadena; devuelve u
     return resultado
 
 
-# ---------- Salida ----------
+# ============================================================
+#  SALIDA: el árbol anotado, el orden de evaluación y S.pts
+# ============================================================
 
 def texto_nodo(n, sdd):  # una línea del árbol anotado: H2 [ant=f, pts=3]
     nombres = ["lexval"] if n.produccion is None else list(sdd["atributos"].get(n.simbolo, {}))
@@ -343,6 +398,10 @@ def imprimir_resultado(sdd, r, grafo=False):  # la salida del ítem 3 para una c
     print(f"S.{sdd['principal']} = {r['valor']}")
 
 
+# ============================================================
+#  PROGRAMA PRINCIPAL: python sdd.py archivo.json [--graph] < cadenas
+# ============================================================
+
 def main():  # python sdd.py archivo.json [--graph] < cadenas (una por línea; línea vacía al final)
     from main import leer_palabra  # misma lectura de cadenas que en el ítem 2
     rutas = [a for a in sys.argv[1:] if not a.startswith("--")]
@@ -361,5 +420,39 @@ def main():  # python sdd.py archivo.json [--graph] < cadenas (una por línea; l
         palabra = leer_palabra()
 
 
+def demo():  # lo que corre con el botón ▶ (sin archivo): una demostración con el hechizo
+    import os
+    sys.stdout.reconfigure(encoding="utf-8")  # para que las tildes se vean bien también en el panel Output
+    carpeta = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ejemplos")
+
+    # 1. El SDD: la gramática y sus reglas, tal como están en el JSON
+    ruta = os.path.join(carpeta, "sdd_hechizo.json")
+    with open(ruta, encoding="utf-8") as f:
+        datos = json.load(f)
+    print("1) El SDD del hechizo (ejemplos/sdd_hechizo.json)")
+    print("   Gramática: S -> H,  H -> E H | e,  E -> f | a | t | v")
+    print("   Reglas:")
+    for produccion, reglas in datos["rules"].items():
+        print(f"     {produccion:<10} " + " ;  ".join(reglas))
+
+    # 2. Los 4 pasos con faatv: árbol, grafo, orden y evaluación
+    sdd = cargar_archivo(ruta)
+    r = evaluar_cadena(sdd, "faatv")
+    print()
+    print("2) Con la cadena 'faatv' (los 4 pasos: árbol, grafo, orden, evaluar)")
+    print(f"   Grafo de dependencias: {len(r['instancias'])} atributos y {len(r['aristas'])} flechas")
+    imprimir_resultado(sdd, r)
+
+    # 3. El caso circular: la misma gramática con una regla cambiada a propósito
+    circular = cargar_archivo(os.path.join(carpeta, "sdd_hechizo_circular.json"))
+    print()
+    print("3) El SDD circular (ejemplos/sdd_hechizo_circular.json): H1.ant = H.pts en vez de H1.ant = E.el")
+    print("   Con la cadena 'fa':")
+    imprimir_resultado(circular, evaluar_cadena(circular, "fa"))
+
+
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) == 1:  # sin archivo (botón ▶): demostración con el hechizo
+        demo()
+    else:                   # con archivo: python sdd.py ejemplos\\sdd_hechizo.json < cadenas
+        main()
