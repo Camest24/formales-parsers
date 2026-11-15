@@ -12,7 +12,7 @@ Class number: SI2002-4368 (Formal Languages, 2026-2)
 ## Environment
 
 - Operating system: Windows 11
-- Language: Python 3.12.7 (standard library only)
+- Language: Python 3.14.8 (standard library only)
 - Testing: `unittest` (included with Python)
 
 ## Project structure
